@@ -331,7 +331,7 @@ sub SectionProcessIp_geoip2_city {
   my $rec2 = 'unknown';
 	my ($country, $city, $subdivision) = Lookup_geoip2_city($param);
   if($country){
-    $rec2 = $country;
+    $rec2 = lc($country);
     if ($city) {
         $rec = $country . '_' . $city;
         $rec .= '_' . $subdivision if ($subdivision);
@@ -373,6 +373,7 @@ sub SectionReadHistory_geoip2_city {
 	do {
     debug("test params $_");
 		if ($field[0]) {
+      $field[0] = lc($field[0]);
 			$count++;
 			if ($issectiontoload) {
 				$countloaded++;
