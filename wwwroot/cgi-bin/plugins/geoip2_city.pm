@@ -211,6 +211,7 @@ sub AddHTMLGraph_geoip2_city {
     print "</tr>\n";
     $total_p=$total_h=$total_k=0;
     my $count=0;
+
     &BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_country_h,\%_country_h);
         foreach my $countrycode (@keylist) {
               if ($countrycode eq 'unknown') { next; }
@@ -314,7 +315,7 @@ sub SectionInitHashArray_geoip2_city {
 #    my $param="$_[0]";
 	# <-----
 	if ($Debug) { debug(" Plugin $PluginName: Init_HashArray"); }
-	%_city_p = %_city_h = %_city_k = %_city_l =();
+	%_city_p = %_city_h = %_country_p = %_country_h = %_city_k = %_city_l =();
 	# ----->
 	return 0;
 }
@@ -342,7 +343,6 @@ sub SectionProcessIp_geoip2_city {
   }
 	$_city_h{$rec}++;
   $_country_h{$rec2}++;
-  if ($Debug) { debug(" section process ip $_city_h %_city_h"); }
 	return;
 }
 
@@ -369,6 +369,7 @@ sub SectionReadHistory_geoip2_city {
 	if ($Debug) { debug(" Plugin $PluginName: Begin of PLUGIN_geoip2_city section"); }
 	my @field=();
 	my $count=0;my $countloaded=0;
+  
 	do {
     debug("test params $_");
 		if ($field[0]) {
@@ -378,7 +379,7 @@ sub SectionReadHistory_geoip2_city {
         my @split = split /_/, $field[0];
 				if ($field[2]) { 
             if(scalar @split == 3){ $_city_h{$field[0]}+=$field[2]; }
-            $_country_h{$split[0]}+=$field[2]; 
+            if(scalar @split == 1){ $_country_h{$split[0]}+=$field[2]; }
          }
 			}
 		}
@@ -414,14 +415,19 @@ sub SectionWriteHistory_geoip2_city {
 		$keysinkeylist{$_}=1;
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
+  foreach (keys %_city_h) {
+		if ($keysinkeylist{$_}) { next; }
+		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
+	}
+
   &BuildKeyList($MAXNBOFSECTIONGIR,1,\%_country_h,\%_country_h);
 	foreach (@keylist) {
 		$keysinkeylist{$_}=1;
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_country_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
-	foreach (keys %_city_h) {
+	foreach (keys %_country_h) {
 		if ($keysinkeylist{$_}) { next; }
-		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
+		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_country_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
 	print HISTORYTMP "${xmleb}END_PLUGIN_$PluginName${xmlee}\n";
 	# ----->
