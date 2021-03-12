@@ -51,6 +51,8 @@ use vars qw/
 $geoip2_city
 %_city_p
 %_city_h
+%_country_h
+%_country_p
 %_city_k
 %_city_l
 $MAXNBOFSECTIONGIR
@@ -122,11 +124,15 @@ sub AddHTMLGraph_geoip2_city {
     my $menulink=$_[2];
     my $menutext=$_[3];
 	# <-----
+  $countryTable = (index($QueryString, "suboutput=country") != -1);
+  
     my $ShowCities='H';
 	$MinHit{'Cities'}=1;
+
 	my $total_p; my $total_h; my $total_k;
 	my $rest_p; my $rest_h; my $rest_k;
-
+  
+  if($countryTable != 1){
 	if ($Debug) { debug(" Plugin $PluginName: AddHTMLGraph $categ $menu $menulink $menutext"); }
 	my $title="GeoIP Cities";
 	&tab_head($title,19,0,'cities');
@@ -145,26 +151,14 @@ sub AddHTMLGraph_geoip2_city {
 	my $count=0;
 	&BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_city_h,\%_city_h);
     # Group by country
-#    my @countrylist=('ca','us');
-#    foreach my $country (@countrylist) {
-#	    print "<tr>";
-#	    print "<td class=\"aws\"><b>".$countrylib{$country}."</b></td>";
-#   		if ($ShowCities =~ /P/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /P/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /H/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /H/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /B/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /L/i) { print "<td>&nbsp;</td>"; }
-#        print "</tr>\n";
     	foreach my $key (@keylist) {
             if ($key eq 'unknown') { next; }
    		    my ($countrycode,$city,$regionname)=split('_',$key,3);
             $city=~s/%20/ /g;
             $regionname=~s/%20/ /g;
-#            if ($countrycode ne $country) { next; }
    			my $p_p; my $p_h;
-			if ($TotalPages) { $p_p=int(($_city_p{$key}||0)/$TotalPages*1000)/10; }
-   			if ($TotalHits)  { $p_h=int($_city_h{$key}/$TotalHits*1000)/10; }
+			if ($TotalPages) { $p_p=(($_city_p{$key}||0)/$TotalPages*1000)/10; }
+   			if ($TotalHits)  { $p_h=($_city_h{$key}/$TotalHits*1000)/10; }
    		    print "<tr>";
    		    print "<td class=\"aws\">".$DomainsHashIDLib{$countrycode}."</td>";
    		    print "<td class=\"aws\">".ucfirst(EncodeToPageCode($regionname))."</td>";
@@ -172,7 +166,7 @@ sub AddHTMLGraph_geoip2_city {
     		if ($ShowCities =~ /P/i) { print "<td>".($_city_p{$key}?Format_Number($_city_p{$key}):"&nbsp;")."</td>"; }
     		if ($ShowCities =~ /P/i) { print "<td>".($_city_p{$key}?"$p_p %":'&nbsp;')."</td>"; }
     		if ($ShowCities =~ /H/i) { print "<td>".($_city_h{$key}?Format_Number($_city_h{$key}):"&nbsp;")."</td>"; }
-    		if ($ShowCities =~ /H/i) { print "<td>".($_city_h{$key}?"$p_h %":'&nbsp;')."</td>"; }
+    		if ($ShowCities =~ /H/i) { print "<td>".($_city_h{$key}?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; }
     		if ($ShowCities =~ /B/i) { print "<td>".Format_Bytes($_city_k{$key})."</td>"; }
     		if ($ShowCities =~ /L/i) { print "<td>".($_city_p{$key}?Format_Date($_city_l{$key},1):'-')."</td>"; }
     		print "</tr>\n";
@@ -181,37 +175,76 @@ sub AddHTMLGraph_geoip2_city {
     		$total_k += $_city_k{$key}||0;
     		$count++;
     	}
-#    }
-	if ($Debug) { debug("Total real / shown : $TotalPages / $total_p - $TotalHits / $total_h - $TotalBytes / $total_h",2); }
+	if ($Debug) { debug("Total real / shown : $TotalPages / $total_p - $TotalHits / $total_h - $TotalBytes / $total_h"); }
 	$rest_p=0;
 	$rest_h=$TotalHits-$total_h;
 	$rest_k=0;
 	if ($rest_p > 0 || $rest_h > 0 || $rest_k > 0) {	# All other cities
-#	    print "<tr>";
-#	    print "<td class=\"aws\">&nbsp;</td>";
-#   		if ($ShowCities =~ /P/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /P/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /H/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /H/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /B/i) { print "<td>&nbsp;</td>"; }
-#   		if ($ShowCities =~ /L/i) { print "<td>&nbsp;</td>"; }
-#        print "</tr>\n";
-
 		my $p_p; my $p_h;
-		if ($TotalPages) { $p_p=int($rest_p/$TotalPages*1000)/10; }
-		if ($TotalHits)  { $p_h=int($rest_h/$TotalHits*1000)/10; }
+		if ($TotalPages) { $p_p=($rest_p/$TotalPages*1000)/10; }
+		if ($TotalHits)  { $p_h=($rest_h/$TotalHits*1000)/10; }
 		print "<tr>";
 		print "<td class=\"aws\" colspan=\"3\"><span style=\"color: #$color_other\">$Message[2]/$Message[0]</span></td>";
 		if ($ShowCities =~ /P/i) { print "<td>".($rest_p?$rest_p:"&nbsp;")."</td>"; }
    		if ($ShowCities =~ /P/i) { print "<td>".($rest_p?"$p_p %":'&nbsp;')."</td>"; }
 		if ($ShowCities =~ /H/i) { print "<td>".($rest_h?$rest_h:"&nbsp;")."</td>"; }
-   		if ($ShowCities =~ /H/i) { print "<td>".($rest_h?"$p_h %":'&nbsp;')."</td>"; }
+   		if ($ShowCities =~ /H/i) { print "<td>".($rest_h?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; }
 		if ($ShowCities =~ /B/i) { print "<td>".Format_Bytes($rest_k)."</td>"; }
 		if ($ShowCities =~ /L/i) { print "<td>&nbsp;</td>"; }
 		print "</tr>\n";
 	}
 	&tab_end();
+  }else{
 
+  # Start of countries table 
+  $total_p = $total_h = $total_k = 0;
+  $rest_p = $rest_h = $rest_k = 0;
+
+  my $title="GeoIP Countries";
+    &tab_head($title,19,0,'country');
+    print "<tr bgcolor=\"#$color_TableBGRowTitle\">";
+    print "<th>".$Message[148]."</th>";
+    if ($ShowCities =~ /H/i) { 
+      print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[57]</th>"; 
+      print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[15]</th>";
+    }
+    print "</tr>\n";
+    $total_p=$total_h=$total_k=0;
+    my $count=0;
+    &BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_country_h,\%_country_h);
+        foreach my $countrycode (@keylist) {
+              if ($countrycode eq 'unknown') { next; }
+           debug("$countrycode");
+          my $p_p; my $p_h;
+        if ($TotalPages) { $p_p=(($_city_p{$countrycode}||0)/$TotalPages*1000)/10; }
+          if ($TotalHits)  { $p_h=($_country_h{$countrycode}/$TotalHits*1000)/10; }
+            print "<tr>";
+            print "<td class=\"aws\">".$DomainsHashIDLib{$countrycode}."</td>";
+          if ($ShowCities =~ /H/i) { 
+              print "<td>".($_country_h{$countrycode}?Format_Number($_country_h{$countrycode}):"&nbsp;")."</td>";
+              print "<td>".($_country_h{$countrycode}?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; 
+          }
+          print "</tr>\n";
+          $total_h += $_country_h{$countrycode};
+          $count++;
+        }
+    if ($Debug) { debug("Total real / shown : $TotalPages / $total_p - $TotalHits / $total_h - $TotalBytes / $total_h"); }
+    $rest_p=0;
+    $rest_h=$TotalHits-$total_h;
+    $rest_k=0;
+    if ($rest_p > 0 || $rest_h > 0 || $rest_k > 0) {	# All other cities
+      my $p_p; my $p_h;
+      if ($TotalPages) { $p_p=($rest_p/$TotalPages*1000)/10; }
+      if ($TotalHits)  { $p_h=($rest_h/$TotalHits*1000)/10; }
+      print "<tr>";
+      print "<td class=\"aws\" ><span style=\"color: #$color_other\">$Message[2]/$Message[0]</span></td>";
+      if ($ShowCities =~ /H/i) { print "<td>".($rest_h?$rest_h:"&nbsp;")."</td>"; }
+      if ($ShowCities =~ /H/i) { print "<td>".($rest_h?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; }
+      print "</tr>\n";
+    }
+
+  &tab_end();
+  }
 	# ----->
 	return 0;
 }
@@ -245,20 +278,22 @@ sub ShowInfoHost_geoip2_city {
     	$NewLinkParams =~ s/^&amp;//; $NewLinkParams =~ s/&amp;$//;
     	if ($NewLinkParams) { $NewLinkParams="${NewLinkParams}&"; }
 
-#		print "<th width=\"80\">";
-#        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript?${NewLinkParams}output=plugin_geoip2_city&amp;suboutput=country"):"$PROG$StaticLinks.plugin_geoip2_city.country.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>Country</a>";
-#        print "</th>";
+	print "<th width=\"80\">";
+        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript${NewLinkParams}output=plugin_geoip2_city&amp;suboutput=country"):"$PROG$StaticLinks.plugin_geoip2_city.country.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>Country</a>";
+       print "</th>";
 		print "<th width=\"80\">";
-        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript?${NewLinkParams}output=plugin_$PluginName"):"$StaticLinks.plugin_$PluginName.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>City</a>";
+        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript${NewLinkParams}output=plugin_$PluginName"):"$StaticLinks.plugin_$PluginName.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>City</a>";
         print "</th>";
 	}
 	elsif ($param)
 	{
+    
 		my ($country, $city, $subdivision) = Lookup_geoip2_city($param);
-#		print "<td>";
-#		if ($country) { print $DomainsHashIDLib{$country}?$DomainsHashIDLib{$country}:"<span style=\"color: #$color_other\">$Message[0]</span>"; }
-#		else { print "<span style=\"color: #$color_other\">$Message[0]</span>"; }
-#		print "</td>";
+    $country = lc($country);
+		print "<td>";
+		if ($country) { print $DomainsHashIDLib{$country}?$DomainsHashIDLib{$country}:"<span style=\"color: #$color_other\">$Message[0]</span>"; }
+		else { print "<span style=\"color: #$color_other\">$Message[0]</span>"; }
+		print "</td>";
 		print "<td>";
 		if ($city) { print EncodeToPageCode($city); }
 		else { print "<span style=\"color: #$color_other\">$Message[0]</span>"; }
@@ -292,16 +327,22 @@ sub SectionInitHashArray_geoip2_city {
 sub SectionProcessIp_geoip2_city {
 	my $param = shift;
 	my $rec = 'unknown';
+  my $rec2 = 'unknown';
 	my ($country, $city, $subdivision) = Lookup_geoip2_city($param);
-	if ($country && $city) {
-			$rec = $country . '_' . $city;
-			$rec .= '_' . $subdivision if ($subdivision);
-			$rec =~ s/ /%20/g;
-			# escape non-latin1 chars
-			$rec =~ s/([^\x00-\x7F])/sprintf "&#x%X;", ord($1)/ge;
-			$rec = lc($rec);
-	}
+  if($country){
+    $rec2 = $country;
+    if ($city) {
+        $rec = $country . '_' . $city;
+        $rec .= '_' . $subdivision if ($subdivision);
+        $rec =~ s/ /%20/g;
+        # escape non-latin1 chars
+        $rec =~ s/([^\x00-\x7F])/sprintf "&#x%X;", ord($1)/ge;
+        $rec = lc($rec);
+    }
+  }
 	$_city_h{$rec}++;
+  $_country_h{$rec2}++;
+  if ($Debug) { debug(" section process ip $_city_h %_city_h"); }
 	return;
 }
 
@@ -329,11 +370,16 @@ sub SectionReadHistory_geoip2_city {
 	my @field=();
 	my $count=0;my $countloaded=0;
 	do {
+    debug("test params $_");
 		if ($field[0]) {
 			$count++;
 			if ($issectiontoload) {
 				$countloaded++;
-				if ($field[2]) { $_city_h{$field[0]}+=$field[2]; }
+        my @split = split /_/, $field[0];
+				if ($field[2]) { 
+            if(scalar @split == 3){ $_city_h{$field[0]}+=$field[2]; }
+            $_country_h{$split[0]}+=$field[2]; 
+         }
 			}
 		}
 		$_=<HISTORY>;
@@ -366,16 +412,15 @@ sub SectionWriteHistory_geoip2_city {
 	my %keysinkeylist=();
 	foreach (@keylist) {
 		$keysinkeylist{$_}=1;
-		#my $page=$_city_p{$_}||0;
-		#my $bytes=$_city_k{$_}||0;
-		#my $lastaccess=$_city_l{$_}||'';
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
+	}
+  &BuildKeyList($MAXNBOFSECTIONGIR,1,\%_country_h,\%_country_h);
+	foreach (@keylist) {
+		$keysinkeylist{$_}=1;
+		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_country_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
 	foreach (keys %_city_h) {
 		if ($keysinkeylist{$_}) { next; }
-		#my $page=$_city_p{$_}||0;
-		#my $bytes=$_city_k{$_}||0;
-		#my $lastaccess=$_city_l{$_}||'';
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
 	print HISTORYTMP "${xmleb}END_PLUGIN_$PluginName${xmlee}\n";
