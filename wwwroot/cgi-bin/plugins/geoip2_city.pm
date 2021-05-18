@@ -10,6 +10,8 @@
 
 # <-----
 # ENTER HERE THE USE COMMAND FOR ALL REQUIRED PERL MODULES
+use Data::Dumper qw(Dumper);
+
 use vars qw/ $type /;
 $type='geoip2';
 if (!eval ('require "GeoIP2/Database/Reader.pm";')) {
@@ -51,6 +53,8 @@ use vars qw/
 $geoip2_city
 %_city_p
 %_city_h
+%_country_ip
+%_country_ip_uq
 %_country_h
 %_country_p
 %_city_k
@@ -113,6 +117,11 @@ sub AddHTMLMenuLink_geoip2_city {
 	return 0;
 }
 
+# Remove any duplicates from an array. Leaving only unique values.
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
+}
 
 #-----------------------------------------------------------------------------
 # PLUGIN FUNCTION: AddHTMLGraph_pluginname
@@ -205,23 +214,31 @@ sub AddHTMLGraph_geoip2_city {
     print "<tr bgcolor=\"#$color_TableBGRowTitle\">";
     print "<th>".$Message[148]."</th>";
     if ($ShowCities =~ /H/i) { 
+      print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[11]</th>";
       print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[57]</th>"; 
       print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[15]</th>";
     }
     print "</tr>\n";
     $total_p=$total_h=$total_k=0;
     my $count=0;
-
+    
+    # Calculate the unique visitors for each country
+    foreach $key (keys %_country_ip)
+    { 
+      debug( Dumper \@{ $_country_ip{$key} } );
+      @filtered = uniq(@{ $_country_ip{$key} }) ;
+      $_country_ip_uq{$key} = scalar @filtered;
+    }
     &BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_country_h,\%_country_h);
         foreach my $countrycode (@keylist) {
               if ($countrycode eq 'unknown') { next; }
-           debug("$countrycode");
           my $p_p; my $p_h;
         if ($TotalPages) { $p_p=(($_city_p{$countrycode}||0)/$TotalPages*1000)/10; }
           if ($TotalHits)  { $p_h=($_country_h{$countrycode}/$TotalHits*1000)/10; }
             print "<tr>";
             print "<td class=\"aws\">".$DomainsHashIDLib{$countrycode}."</td>";
           if ($ShowCities =~ /H/i) { 
+              print "<td>".($_country_h{$countrycode}?Format_Number($_country_ip_uq{"ip-".$countrycode}):"&nbsp;")."</td>";
               print "<td>".($_country_h{$countrycode}?Format_Number($_country_h{$countrycode}):"&nbsp;")."</td>";
               print "<td>".($_country_h{$countrycode}?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; 
           }
@@ -232,6 +249,7 @@ sub AddHTMLGraph_geoip2_city {
     if ($Debug) { debug("Total real / shown : $TotalPages / $total_p - $TotalHits / $total_h - $TotalBytes / $total_h"); }
     $rest_p=0;
     $rest_h=$TotalHits-$total_h;
+    $rest_ip_uq=$_country_ip_uq{"ip-unknown"};
     $rest_k=0;
     if ($rest_p > 0 || $rest_h > 0 || $rest_k > 0) {	# All other cities
       my $p_p; my $p_h;
@@ -239,8 +257,15 @@ sub AddHTMLGraph_geoip2_city {
       if ($TotalHits)  { $p_h=($rest_h/$TotalHits*1000)/10; }
       print "<tr>";
       print "<td class=\"aws\" ><span style=\"color: #$color_other\">$Message[2]/$Message[0]</span></td>";
+      if ($ShowCities =~ /H/i) { print "<td>".($rest_ip_uq?$rest_ip_uq:"&nbsp;")."</td>"; }
       if ($ShowCities =~ /H/i) { print "<td>".($rest_h?$rest_h:"&nbsp;")."</td>"; }
       if ($ShowCities =~ /H/i) { print "<td>".($rest_h?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; }
+      print "</tr>\n";
+      print "<tr bgcolor=\"#$color_TableBGRowTitle\">";
+      print "<td class=\"aws\" ><span>$Message[102]</span></td>";
+      if ($ShowCities =~ /H/i) { print "<td>".($TotalUnique?$TotalUnique:"&nbsp;")."</td>"; }
+      if ($ShowCities =~ /H/i) { print "<td>".($TotalHits?$TotalHits:"&nbsp;")."</td>"; }
+      if ($ShowCities =~ /H/i) { print "<td bgcolor=\"#AAAAAA\">".('&nbsp;')."</td>"; }
       print "</tr>\n";
     }
 
@@ -341,6 +366,12 @@ sub SectionProcessIp_geoip2_city {
         $rec = lc($rec);
     }
   }
+  if (exists($_country_ip{"ip-".$rec2})) {
+    push @{ $_country_ip{"ip-".$rec2} }, $param; 
+  }else{
+    $_country_ip{"ip-".$rec2} = [ $param ];
+  }
+  
 	$_city_h{$rec}++;
   $_country_h{$rec2}++;
 	return;
@@ -380,7 +411,15 @@ sub SectionReadHistory_geoip2_city {
         my @split = split /_/, $field[0];
 				if ($field[2]) { 
             if(scalar @split == 3){ $_city_h{$field[0]}+=$field[2]; }
-            if(scalar @split == 1){ $_country_h{$split[0]}+=$field[2]; }
+            if(scalar @split == 1){ 
+                if(index($field[0], "ip-") != -1){ 
+                  @array = split(',',$field[2]);
+                  debug( Dumper \@array ); 
+                  $_country_ip{$field[0]} = [@array]; 
+                }else{
+                  $_country_h{$split[0]}+=$field[2]; 
+                }
+            }
          }
 			}
 		}
@@ -410,6 +449,7 @@ sub SectionWriteHistory_geoip2_city {
 	#print HISTORYTMP "# The $MaxNbOfExtra[$extranum] first number of hits are first\n";
 	$ValueInFile{"plugin_$PluginName"}=tell HISTORYTMP;
 	print HISTORYTMP "${xmlbb}BEGIN_PLUGIN_$PluginName${xmlbs}".(scalar keys %_city_h)."${xmlbe}\n";
+
 	&BuildKeyList($MAXNBOFSECTIONGIR,1,\%_city_h,\%_city_h);
 	my %keysinkeylist=();
 	foreach (@keylist) {
@@ -419,6 +459,19 @@ sub SectionWriteHistory_geoip2_city {
   foreach (keys %_city_h) {
 		if ($keysinkeylist{$_}) { next; }
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", $_city_h{$_}, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
+	}
+
+	&BuildKeyList($MAXNBOFSECTIONGIR,1,\%_country_ip,\%_country_ip);
+	my %keysinkeylist=();
+	foreach (@keylist) {
+		$keysinkeylist{$_}=1;
+    @str = join ',', @{ $_country_ip{$_} }; # Convert array into comma separated string
+		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", @str, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
+	}
+  foreach (keys %_country_ip) {
+		if ($keysinkeylist{$_}) { next; }
+     @str = join ',', @{ $_country_ip{$_} };  # Convert array into comma separated string
+		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", @str, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
 
   &BuildKeyList($MAXNBOFSECTIONGIR,1,\%_country_h,\%_country_h);
