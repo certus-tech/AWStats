@@ -225,9 +225,9 @@ sub AddHTMLGraph_geoip2_city {
     # Calculate the unique visitors for each country
     foreach $key (keys %_country_ip)
     { 
-      debug( Dumper \@{ $_country_ip{$key} } );
-      @filtered = uniq(@{ $_country_ip{$key} }) ;
-      $_country_ip_uq{$key} = scalar @filtered;
+      my @keyz = keys %{ $_country_ip{$key} };
+      my $count = scalar @keyz;
+      $_country_ip_uq{$key} = $count;
     }
     &BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_country_h,\%_country_h);
         foreach my $countrycode (@keylist) {
@@ -366,11 +366,7 @@ sub SectionProcessIp_geoip2_city {
         $rec = lc($rec);
     }
   }
-  if (exists($_country_ip{"ip-".$rec2})) {
-    push @{ $_country_ip{"ip-".$rec2} }, $param; 
-  }else{
-    $_country_ip{"ip-".$rec2} = [ $param ];
-  }
+  $_country_ip{"ip-".$rec2}{$param} = 0;
   
 	$_city_h{$rec}++;
   $_country_h{$rec2}++;
@@ -413,9 +409,13 @@ sub SectionReadHistory_geoip2_city {
             if(scalar @split == 3){ $_city_h{$field[0]}+=$field[2]; }
             if(scalar @split == 1){ 
                 if(index($field[0], "ip-") != -1){ 
-                  @array = split(',',$field[2]);
-                  debug( Dumper \@array ); 
-                  $_country_ip{$field[0]} = [@array]; 
+                  my @array = split(',',$field[2]);
+                  my %hash = map { $_ => 1 } @array;
+                  debug("=============");
+                  debug($field[0]);
+                  debug(Dumper \%hash);
+                  $_country_ip{$field[0]} = \%hash; 
+                  debug(Dumper \%_country_ip);
                 }else{
                   $_country_h{$split[0]}+=$field[2]; 
                 }
@@ -431,6 +431,8 @@ sub SectionReadHistory_geoip2_city {
 	until ($field[0] eq "END_PLUGIN_$PluginName" || $field[0] eq "${xmleb}END_PLUGIN_$PluginName" || ! $_);
 	if ($field[0] ne "END_PLUGIN_$PluginName" && $field[0] ne "${xmleb}END_PLUGIN_$PluginName") { error("History file is corrupted (End of section PLUGIN not found).\nRestore a recent backup of this file (data for this month will be restored to backup date), remove it (data for month will be lost), or remove the corrupted section in file (data for at least this section will be lost).","","",1); }
 	if ($Debug) { debug(" Plugin $PluginName: End of PLUGIN_$PluginName section ($count entries, $countloaded loaded)"); }
+   debug("=============");
+debug(Dumper \%_country_ip);
 	# ----->
 	return 0;
 }
@@ -465,12 +467,16 @@ sub SectionWriteHistory_geoip2_city {
 	my %keysinkeylist=();
 	foreach (@keylist) {
 		$keysinkeylist{$_}=1;
-    @str = join ',', @{ $_country_ip{$_} }; # Convert array into comma separated string
+    %hash = %{$_country_ip{$_}};
+    @keys = keys %hash;
+    @str = join ',', @keys; # Convert array into comma separated string
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", @str, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
   foreach (keys %_country_ip) {
 		if ($keysinkeylist{$_}) { next; }
-     @str = join ',', @{ $_country_ip{$_} };  # Convert array into comma separated string
+    %hash = %{$_country_ip{$_}};
+    @keys = keys %hash;
+    @str = join ',', @keys; # Convert array into comma separated string
 		print HISTORYTMP "${xmlrb}".XMLEncodeForHisto($_)."${xmlrs}0${xmlrs}", @str, "${xmlrs}0${xmlrs}0${xmlre}\n"; next;
 	}
 
