@@ -366,7 +366,7 @@ sub SectionProcessIp_geoip2_city {
         $rec = lc($rec);
     }
   }
-  $_country_ip{"ip-".$rec2}{$param} = 0;
+  $_country_ip{"ip-".$rec2}{$param} = 1;
   
 	$_city_h{$rec}++;
   $_country_h{$rec2}++;
@@ -413,9 +413,14 @@ sub SectionReadHistory_geoip2_city {
                   my %hash = map { $_ => 1 } @array;
                   debug("=============");
                   debug($field[0]);
+                  debug("Deserialised IPs");
                   debug(Dumper \%hash);
-                  $_country_ip{$field[0]} = \%hash; 
-                  debug(Dumper \%_country_ip);
+                  debug("New IPs");
+                  debug(Dumper $_country_ip{$field[0]});
+                  # add the deserialised IP's to the newly parsed IP's. merge the hashes
+                  $_country_ip{$field[0]} = { %hash, %{$_country_ip{$field[0]}} };
+                  debug("Combined IPs to serialise:");
+                  debug(Dumper $_country_ip{$field[0]});
                 }else{
                   $_country_h{$split[0]}+=$field[2]; 
                 }
