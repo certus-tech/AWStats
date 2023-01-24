@@ -10191,7 +10191,12 @@ sub HTMLTopBanner{
 			print "<input type=\"hidden\" name=\"output\" value=\""
 			  . join( ',', keys %HTMLOutput )
 			  . "\" />\n";
-			if ($SiteConfig) {
+      if ($QueryString =~ /suboutput=(\w)/ ) { # a but ugly, but needed to ensure we keep the suboutput option
+        my $suboutputarg = $QueryString;
+        $suboutputarg=~ s/.*suboutput=(\w+).*/\1/;
+			  print "<input type=\"hidden\" name=\"suboutput\" value=\"$suboutputarg\" />\n";
+			}
+      if ($SiteConfig) {
 				print
 "<input type=\"hidden\" name=\"config\" value=\"$SiteConfig\" />\n";
 			}
