@@ -36,8 +36,8 @@ use File::Spec;
 # Defines
 #------------------------------------------------------------------------------
 use vars qw/ $REVISION $VERSION /;
-$REVISION = '20200416';
-$VERSION  = "7.8 (build $REVISION)";
+$REVISION = '20230108';
+$VERSION  = "7.9 (build $REVISION)";
 
 # ----- Constants -----
 use vars qw/
@@ -1313,7 +1313,7 @@ sub warning {
 		if ( !$HeaderHTTPSent && $ENV{'GATEWAY_INTERFACE'} ) { http_head(); }
 		if ( !$HeaderHTMLSent )        { html_head(); }
 		if ( scalar keys %HTMLOutput ) {
-			$messagestring =~ s/\n/\<br\>/g;
+			$messagestring =~ s,\n,<br />,g;
 			print "$messagestring<br />\n";
 		}
 		else {
@@ -8660,7 +8660,7 @@ sub PrintCLIHelp{
 		'browsers',       'domains', 'operating_systems', 'robots',
 		'search_engines', 'worms'
 	);
-	print "----- $PROG $VERSION (c) 2000-2018 Laurent Destailleur -----\n";
+	print "----- $PROG $VERSION (c) 2000-2023 Laurent Destailleur -----\n";
 	print
 "AWStats is a free web server logfile analyzer to show you advanced web\n";
 	print "statistics.\n";
@@ -10124,13 +10124,13 @@ sub HTMLTopBanner{
 			print "<select class=\"aws_formfield\" name=\"databasebreak\">\n";
 			print "<option"
 			  . ( $DatabaseBreak eq "month" ? " selected=\"selected\"" : "" )
-			  . " value=\"month\">Monthly</option>\n";
+			  . " value=\"month\">$Message[5]</option>\n";
 			print "<option"
 			  . ( $DatabaseBreak eq "day" ? " selected=\"selected\"" : "" )
-			  . " value=\"day\">Daily</option>\n";
+			  . " value=\"day\">$Message[4]</option>\n";
 			print "<option"
 			  . ( $DatabaseBreak eq "hour" ? " selected=\"selected\"" : "" )
-			  . " value=\"hour\">Hourly</option>\n";
+			  . " value=\"hour\">$Message[187]</option>\n";
 			print "</select>\n";
 
 			print "<select class=\"aws_formfield\" name=\"month\">\n";
