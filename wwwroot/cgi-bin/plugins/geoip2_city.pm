@@ -44,7 +44,7 @@ my $PluginHooksFunctions="AddHTMLMenuLink AddHTMLGraph ShowInfoHost SectionInitH
 my $PluginName="geoip2_city";
 my $LoadedOverride=0;
 my $OverrideFile="";
-my %TmpDomainLookup = {}; 
+my %TmpDomainLookup = {};
 # ----->
 
 # <-----
@@ -73,7 +73,7 @@ sub Init_geoip2_city {
 	my $InitParams=shift;
 	my $checkversion=&Check_Plugin_Version($PluginNeedAWStatsVersion);
     $MAXNBOFSECTIONGIR=10;
-    
+
 	# <-----
 	# ENTER HERE CODE TO DO INIT PLUGIN ACTIONS
 	debug(" Plugin $PluginName: InitParams=$InitParams",1);
@@ -134,13 +134,13 @@ sub AddHTMLGraph_geoip2_city {
     my $menutext=$_[3];
 	# <-----
   $countryTable = (index($QueryString, "suboutput=country") != -1);
-  
+
     my $ShowCities='H';
 	$MinHit{'Cities'}=1;
 
 	my $total_p; my $total_h; my $total_k;
 	my $rest_p; my $rest_h; my $rest_k;
-  
+
   if($countryTable != 1){
 	if ($Debug) { debug(" Plugin $PluginName: AddHTMLGraph $categ $menu $menulink $menutext"); }
 	my $title="GeoIP Cities";
@@ -205,7 +205,7 @@ sub AddHTMLGraph_geoip2_city {
 	&tab_end();
   }else{
 
-  # Start of countries table 
+  # Start of countries table
   $total_p = $total_h = $total_k = 0;
   $rest_p = $rest_h = $rest_k = 0;
 
@@ -213,39 +213,39 @@ sub AddHTMLGraph_geoip2_city {
     &tab_head($title,19,0,'country');
     print "<tr bgcolor=\"#$color_TableBGRowTitle\">";
     print "<th>".$Message[148]."</th>";
-    if ($ShowCities =~ /H/i) { 
+    if ($ShowCities =~ /H/i) {
       print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[11]</th>";
-      print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[57]</th>"; 
+      print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[57]</th>";
       print "<th bgcolor=\"#$color_h\" width=\"80\">$Message[15]</th>";
     }
     print "</tr>\n";
     $total_p=$total_h=$total_k=0;
     my $count=0;
-    
+
     # Calculate the unique visitors for each country
     foreach $key (keys %_country_ip)
-    { 
+    {
       my @keyz = keys %{ $_country_ip{$key} };
       my $count = scalar @keyz;
       $_country_ip_uq{$key} = $count;
     }
     &BuildKeyList($MaxRowsInHTMLOutput,$MinHit{'Cities'},\%_country_h,\%_country_h);
-        foreach my $countrycode (@keylist) {
-              if ($countrycode eq 'unknown') { next; }
-          my $p_p; my $p_h;
+    foreach my $countrycode (@keylist) {
+      if ($countrycode eq 'unknown') { next; }
+      my $p_p; my $p_h;
         if ($TotalPages) { $p_p=(($_city_p{$countrycode}||0)/$TotalPages*1000)/10; }
           if ($TotalHits)  { $p_h=($_country_h{$countrycode}/$TotalHits*1000)/10; }
-            print "<tr>";
-            print "<td class=\"aws\">".$DomainsHashIDLib{$countrycode}."</td>";
-          if ($ShowCities =~ /H/i) { 
-              print "<td>".($_country_h{$countrycode}?Format_Number($_country_ip_uq{"ip-".$countrycode}):"&nbsp;")."</td>";
-              print "<td>".($_country_h{$countrycode}?Format_Number($_country_h{$countrycode}):"&nbsp;")."</td>";
-              print "<td>".($_country_h{$countrycode}?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>"; 
-          }
-          print "</tr>\n";
-          $total_h += $_country_h{$countrycode};
-          $count++;
-        }
+      print "<tr>";
+      print "<td class=\"aws\">".$DomainsHashIDLib{$countrycode}."</td>";
+      if ($ShowCities =~ /H/i) {
+        print "<td>".($_country_h{$countrycode}?Format_Number($_country_ip_uq{"ip-".$countrycode}):"&nbsp;")."</td>";
+        print "<td>".($_country_h{$countrycode}?Format_Number($_country_h{$countrycode}):"&nbsp;")."</td>";
+        print "<td>".($_country_h{$countrycode}?sprintf("%.2f",$p_h)." %":'&nbsp;')."</td>";
+      }
+      print "</tr>\n";
+      $total_h += $_country_h{$countrycode};
+      $count++;
+    }
     if ($Debug) { debug("Total real / shown : $TotalPages / $total_p - $TotalHits / $total_h - $TotalBytes / $total_h"); }
     $rest_p=0;
     $rest_h=$TotalHits-$total_h;
@@ -313,7 +313,7 @@ sub ShowInfoHost_geoip2_city {
 	}
 	elsif ($param)
 	{
-    
+
 		my ($country, $city, $subdivision) = Lookup_geoip2_city($param);
     $country = lc($country);
 		print "<td>";
@@ -340,7 +340,7 @@ sub SectionInitHashArray_geoip2_city {
 #    my $param="$_[0]";
 	# <-----
 	if ($Debug) { debug(" Plugin $PluginName: Init_HashArray"); }
-	%_city_p = %_city_h = %_country_p = %_country_h = %_city_k = %_city_l =();
+	%_city_p = %_city_h = %_country_p = %_country_h = %_city_k = %_city_l = %_country_ip = %_country_ip_uq =();
 	# ----->
 	return 0;
 }
@@ -367,7 +367,7 @@ sub SectionProcessIp_geoip2_city {
     }
   }
   $_country_ip{"ip-".$rec2}{$param} = 1;
-  
+
 	$_city_h{$rec}++;
   $_country_h{$rec2}++;
 	return;
@@ -396,7 +396,7 @@ sub SectionReadHistory_geoip2_city {
 	if ($Debug) { debug(" Plugin $PluginName: Begin of PLUGIN_geoip2_city section"); }
 	my @field=();
 	my $count=0;my $countloaded=0;
-  
+
 	do {
     debug("test params $_");
 		if ($field[0]) {
@@ -405,25 +405,25 @@ sub SectionReadHistory_geoip2_city {
 			if ($issectiontoload) {
 				$countloaded++;
         my @split = split /_/, $field[0];
-				if ($field[2]) { 
+				if ($field[2]) {
             if(scalar @split == 3){ $_city_h{$field[0]}+=$field[2]; }
-            if(scalar @split == 1){ 
-                if(index($field[0], "ip-") != -1){ 
-                  my @array = split(',',$field[2]);
-                  my %hash = map { $_ => 1 } @array;
-                  debug("=============");
+            if(scalar @split == 1){
+              if(index($field[0], "ip-") != -1){
+                my @array = split(',',$field[2]);
+                my %hash = map { $_ => 1 } @array;
+                debug("=============");
                   debug($field[0]);
-                  debug("Deserialised IPs");
-                  debug(Dumper \%hash);
-                  debug("New IPs");
-                  debug(Dumper $_country_ip{$field[0]});
-                  # add the deserialised IP's to the newly parsed IP's. merge the hashes
-                  $_country_ip{$field[0]} = { %hash, %{$_country_ip{$field[0]}} };
-                  debug("Combined IPs to serialise:");
-                  debug(Dumper $_country_ip{$field[0]});
-                }else{
-                  $_country_h{$split[0]}+=$field[2]; 
-                }
+                debug("Deserialised IPs");
+                debug(Dumper \%hash);
+                debug("New IPs");
+                debug(Dumper $_country_ip{$field[0]});
+                # add the deserialised IP's to the newly parsed IP's. merge the hashes
+                $_country_ip{$field[0]} = { %hash, %{$_country_ip{$field[0]}} };
+                debug("Combined IPs to serialise:");
+                debug(Dumper $_country_ip{$field[0]});
+              }else{
+                $_country_h{$split[0]}+=$field[2];
+              }
             }
          }
 			}
@@ -503,7 +503,7 @@ sub SectionWriteHistory_geoip2_city {
 # PLUGIN FUNCTION: LoadOverrideFile
 # Attempts to load a comma delimited file that will override the GeoIP database
 # Useful for Intranet records
-# CSV format: IP,2-char Country code, region, city, postal code, latitude, 
+# CSV format: IP,2-char Country code, region, city, postal code, latitude,
 #				longitude, US metro code, US area code
 #-----------------------------------------------------------------------------
 sub LoadOverrideFile_geoip2_city{
