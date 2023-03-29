@@ -294,6 +294,7 @@ sub ShowInfoHost_geoip2_city {
     	$NewLinkParams =~ s/(^|&|&amp;)output(=\w*|$)//i;
     	$NewLinkParams =~ s/(^|&|&amp;)staticlinks(=\w*|$)//i;
     	$NewLinkParams =~ s/(^|&|&amp;)framename=[^&]*//i;
+    	$NewLinkParams =~ s/(^|&|&amp;)suboutput=[^&]*//i;
     	my $NewLinkTarget='';
     	if ($DetailedReportsOnNewWindows) { $NewLinkTarget=" target=\"awstatsbis\""; }
     	if (($FrameName eq 'mainleft' || $FrameName eq 'mainright') && $DetailedReportsOnNewWindows < 2) {
@@ -308,7 +309,7 @@ sub ShowInfoHost_geoip2_city {
         print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript${NewLinkParams}output=plugin_geoip2_city&amp;suboutput=country"):"$PROG$StaticLinks.plugin_geoip2_city.country.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>Country</a>";
        print "</th>";
 		print "<th width=\"80\">";
-        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript${NewLinkParams}output=plugin_$PluginName"):"$StaticLinks.plugin_$PluginName.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>City</a>";
+        print "<a href=\"".($ENV{'GATEWAY_INTERFACE'} || !$StaticLinks?XMLEncode("$AWScript${NewLinkParams}output=plugin_$PluginName&amp;suboutput=city"):"$StaticLinks.plugin_$PluginName.$StaticExt")."\"$NewLinkTarget>GeoIP2<br/>City</a>";
         print "</th>";
 	}
 	elsif ($param)
