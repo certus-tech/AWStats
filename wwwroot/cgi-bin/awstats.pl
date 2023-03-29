@@ -8893,6 +8893,9 @@ sub HTMLShowFormFilter {
 		if ( $QueryString =~ /(^|&|&amp;)framename=(\w+)/i ) {
 			print "<input type=\"hidden\" name=\"framename\" value=\"$2\" />\n";
 		}
+		if ( $QueryString =~ /(^|&|&amp;)suboutput=(\w+)/i ) {
+			print "<input type=\"hidden\" name=\"suboutput\" value=\"$2\" />\n";
+		}
                 if ( $QueryString =~ /(^|&|&amp;)databasebreak=(\w+)/i) {
                         print "<input type=\"hidden\" name=\"databasebreak\" value=\"$2\" />\n";
                 }
